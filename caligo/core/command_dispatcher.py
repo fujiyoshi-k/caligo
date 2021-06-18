@@ -92,13 +92,6 @@ class CommandDispatcher(Base):
             except KeyError:
                 return
 
-            if ((cmd.module.name == "GoogleDrive" and not cmd.module.disabled)
-                    and cmd.name not in ["gdreset", "gdclear"]):
-                ret = await cmd.module.authorize(msg)
-
-                if ret is False:
-                    return
-
             cmd_len = len(self.prefix) + len(msg.segments[0]) + 1
             if cmd.pattern is not None and msg.reply_to_message:
                 matches = list(cmd.pattern.finditer(msg.reply_to_message.text))
@@ -109,6 +102,34 @@ class CommandDispatcher(Base):
 
             ctx = command.Context(self, msg, msg.segments, cmd_len, matches)
 
+            # Ensure specified argument needs are met
+            if cmd.usage is not None and not ctx.input:
+                err_base = f"⚠️ Missing parameters: {cmd.usage}"
+
+                if cmd.usage_reply:
+                    if msg.reply_to_message:
+                        reply_msg = msg.reply_to_message
+                        if reply_msg.text:
+                            ctx.input = reply_msg.text
+                        elif not cmd.usage_optional:
+                            await ctx.respond(
+                                f"{err_base}\n__The message you replied to doesn't contain text.__"
+                            )
+                            return
+                    elif not cmd.usage_optional:
+                        await ctx.respond(f"{err_base} (replying is also supported)")
+                        return
+                elif not cmd.usage_optional:
+                    await ctx.respond(err_base)
+                    return
+
+            if ((cmd.module.name == "GoogleDrive" and not cmd.module.disabled)
+                    and cmd.name not in ["gdreset", "gdclear"]):
+                ret = await cmd.module.authorize(msg)
+
+                if ret is False:
+                    return
+
             try:
                 ret = await cmd.func(ctx)
 
@@ -117,9 +138,8 @@ class CommandDispatcher(Base):
                         raise TypeError("Second value must be int/float, "
                                         f"got: {type(ret[1])}")
                     await ctx.respond(ret[0], delete_after=ret[1])
-                else:
-                    if ret is not None:
-                        await ctx.respond(ret)
+                elif ret is not None:
+                    await ctx.respond(ret)
             except pyrogram.errors.MessageNotModified:
                 cmd.module.log.warning(
                     f"Command '{cmd.name}' triggered a message edit with no changes"
