@@ -75,6 +75,19 @@ class GoogleDrive(module.Module):
 
     getDirectLink: util.aria2.DirectLinks
 
+    async def build_service(self) -> None:
+        if not self.creds:
+            return
+
+        # service will be overwrite if credentials is expired
+        self.service = await util.run_sync(build,
+                                           "drive",
+                                           "v3",
+                                           credentials=self.creds,
+                                           cache_discovery=False)
+
+        self.aria2 = self.bot.modules["Aria2"]
+
     async def on_load(self) -> None:
         self.creds = None
         self.db = self.bot.get_db("gdrive")
@@ -94,17 +107,33 @@ class GoogleDrive(module.Module):
                 self.bot.unload_module(self)
                 return
         else:
-            self.aria2 = self.bot.modules["Aria2"]
             self.creds = await util.run_sync(pickle.loads, creds)
-            # service will be overwrite if credentials is expired
-            self.service = await util.run_sync(build,
-                                               "drive",
-                                               "v3",
-                                               credentials=self.creds,
-                                               cache_discovery=False)
+            await self.build_service()
 
     async def on_start(self, _: int) -> None:
         self.getDirectLink = util.aria2.DirectLinks(self.bot.http)
+
+    async def on_command_gdrive(self, message: pyrogram.types.Message) -> None:
+        if not self.creds or not self.creds.valid:
+            if self.creds and self.creds.expired and self.creds.refresh_token:
+                self.log.info("Refreshing credentials")
+                await util.run_sync(self.creds.refresh, Request())
+
+                credential = await util.run_sync(pickle.dumps, self.creds)
+                await self.db.find_one_and_update(
+                    {"_id": self.name}, {"$set": {
+                        "creds": credential
+                    }})
+            else:
+                ret = await asyncio.gather(
+                    self.bot.respond(message,
+                                     "Credential is empty, generating..."),
+                    asyncio.sleep(2.5),
+                    self.getAccessToken(message))
+
+                await self.bot.respond(message, ret[2])
+
+            self.bot.loop.create_task(self.build_service())
 
     @command.desc("Check your GoogleDrive credentials")
     @command.alias("gdauth")
@@ -161,35 +190,8 @@ class GoogleDrive(module.Module):
                                               "creds": credential
                                           }},
                                           upsert=True)
-        await self.on_load()
 
         return "Credentials created."
-
-    async def authorize(self,
-                        message: pyrogram.types.Message) -> Optional[bool]:
-        if not self.creds or not self.creds.valid:
-            if self.creds and self.creds.expired and self.creds.refresh_token:
-                self.log.info("Refreshing credentials")
-                await util.run_sync(self.creds.refresh, Request())
-
-                credential = await util.run_sync(pickle.dumps, self.creds)
-                await self.db.find_one_and_update(
-                    {"_id": self.name}, {"$set": {
-                        "creds": credential
-                    }})
-            else:
-                await asyncio.gather(
-                    self.bot.respond(message,
-                                     "Credential is empty, generating..."),
-                    asyncio.sleep(2.5))
-
-                ret = await self.getAccessToken(message)
-
-                await self.bot.respond(message, ret)
-                if self.creds is None:
-                    return False
-
-            await self.on_load()
 
     async def getInfo(self, identifier: str,
                       fields: Iterable[str]) -> Dict[str, Any]:

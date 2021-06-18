@@ -96,6 +96,14 @@ class CommandDispatcher(Base):
             except KeyError:
                 return
 
+            # GoogleDrive module case
+            if cmd.module.name == "GoogleDrive" and cmd.name not in ("gdclear",
+                                                                     "gdreset"):
+                await self.dispatch_event("command_gdrive", msg)
+
+                if not cmd.module.creds:
+                    return
+
             cmd_len = len(self.prefix) + len(msg.segments[0]) + 1
             if cmd.pattern is not None and msg.reply_to_message:
                 matches = list(cmd.pattern.finditer(msg.reply_to_message.text))
@@ -127,13 +135,6 @@ class CommandDispatcher(Base):
                         return
                 elif not cmd.usage_optional:
                     await ctx.respond(err_base)
-                    return
-
-            if ((cmd.module.name == "GoogleDrive" and not cmd.module.disabled)
-                    and cmd.name not in ["gdreset", "gdclear"]):
-                ret = await cmd.module.authorize(msg)
-
-                if ret is False:
                     return
 
             try:
