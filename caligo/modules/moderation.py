@@ -1,8 +1,8 @@
+import asyncio
 from datetime import datetime
 from typing import Any, ClassVar, List, Optional, Tuple, Union
 
 import pyrogram
-from pyrogram.errors import MessageDeleteForbidden
 
 from .. import command, module, util
 
@@ -223,8 +223,6 @@ class ModerationModule(module.Module):
     @command.usage("del", reply=True)
     async def cmd_del(self, ctx: command.Context) -> Optional[str]:
         """ reply to message as target, this function will delete that. """
-        try:
-            await ctx.msg.reply_to_message.delete(revoke=True)
-        except MessageDeleteForbidden:
-            pass
-        await ctx.msg.delete()
+        await asyncio.gather(ctx.msg.reply_to_message.delete(revoke=True),
+                             ctx.msg.delete(),
+                             return_exceptions=True)
