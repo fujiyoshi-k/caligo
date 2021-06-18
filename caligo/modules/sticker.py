@@ -171,7 +171,8 @@ class StickerModule(module.Module):
 
     @command.desc("Copy a sticker into another pack")
     @command.alias("stickercopy", "kang")
-    @command.usage("[sticker pack VOL number? if not set] [emoji?]", optional=True)
+    @command.usage("[sticker pack VOL number? if not set] [emoji?]",
+                   optional=True)
     async def cmd_copysticker(self, ctx: command.Context) -> str:
         if not ctx.msg.reply_to_message:
             return "__Reply to a sticker to copy it.__"

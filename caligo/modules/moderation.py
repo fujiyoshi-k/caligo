@@ -179,9 +179,6 @@ class ModerationModule(module.Module):
     async def cmd_purge(self,
                         ctx: command.Context) -> Union[Optional[str], Tuple[str, Union[int, float]]]:
         """ This function need permission to delete messages. """
-        if not ctx.msg.reply_to_message:
-            return "__Reply to a message.__"
-
         if ctx.msg.chat.type in ["group", "supergroup"]:
             perm = (await
                     ctx.bot.client.get_chat_member(ctx.msg.chat.id,
@@ -226,9 +223,6 @@ class ModerationModule(module.Module):
     @command.usage("del", reply=True)
     async def cmd_del(self, ctx: command.Context) -> Optional[str]:
         """ reply to message as target, this function will delete that. """
-        if not ctx.msg.reply_to_message:
-            return "__Reply to a message.__"
-
         try:
             await ctx.msg.reply_to_message.delete(revoke=True)
         except MessageDeleteForbidden:

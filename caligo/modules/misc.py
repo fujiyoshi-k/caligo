@@ -32,9 +32,6 @@ class Misc(module.Module):
     @command.desc("Upload file into telegram server")
     @command.usage("[file path]")
     async def cmd_upload(self, ctx: command.Context) -> Optional[str]:
-        if not ctx.input:
-            return "__Pass the file path.__"
-
         before = util.time.sec()
         file_path = Path(ctx.input)
         last_update_time = None
@@ -99,10 +96,6 @@ class Misc(module.Module):
     @command.desc("Abort transmission of upload or download")
     @command.usage("[file gid]", reply=True)
     async def cmd_abort(self, ctx) -> Optional[str]:
-        if not ctx.input and not ctx.msg.reply_to_message:
-            return "__Pass GID or reply to message of task to abort transmission.__"
-        if ctx.msg.reply_to_message and ctx.input:
-            return "__Can't pass gid while replying to message.__"
         aria2: Any = self.bot.modules.get("Aria2")
         drive: Any = self.bot.modules.get("GoogleDrive")
 

@@ -413,8 +413,6 @@ class GoogleDrive(module.Module):
     async def cmd_gdremove(self, ctx: command.Context, *,
                            identifier: Optional[str] = None
                            ) -> Union[str, Tuple[str, int]]:
-        if not ctx.input and not identifier:
-            return "__Pass the id of content to delete it__", 5
         if ctx.input and not identifier:
             identifier = getIdFromUrl(ctx.input)
 
@@ -424,12 +422,10 @@ class GoogleDrive(module.Module):
         return f"__Deleted:__ `{identifier}`"
 
     @command.desc("Copy public GoogleDrive folder/file into your own")
-    @command.usage("[file id or folder id]")
+    @command.usage("[file id or folder id]", reply=True)
     @command.alias("gdcp")
     async def cmd_gdcopy(self, ctx: command.Context) -> Union[str,
                                                               Tuple[str, int]]:
-        if not ctx.input and not ctx.msg.reply_to_message:
-            return "__Input the id of the file/folder or reply with abort__", 5
         if ctx.msg.reply_to_message and ctx.input != "abort":
             return "__Replying to message only for aborting task__", 5
 
@@ -515,12 +511,9 @@ class GoogleDrive(module.Module):
         return f"Copying success: [{content['name']}]({ret['webViewLink']})"
 
     @command.desc("Mirror Magnet/Torrent/Link/Message Media into GoogleDrive")
-    @command.usage("[Magnet/Torrent/Link or reply to message]")
+    @command.usage("[Magnet/Torrent/Link or reply to message]", reply=True)
     async def cmd_gdmirror(self, ctx: command.Context) -> Optional[str]:
-        if not ctx.input and not ctx.msg.reply_to_message:
-            return "__Either link nor media found.__"
-        if ctx.input and ctx.msg.reply_to_message:
-            return "__Can't pass link while replying to message.__"
+        types = ctx.input
 
         if ctx.msg.reply_to_message:
             reply_msg = ctx.msg.reply_to_message
@@ -556,12 +549,8 @@ class GoogleDrive(module.Module):
                         self.task.remove((ctx.msg.message_id, task))
 
                     return
-            elif reply_msg.text:
-                types = reply_msg.text
             else:
                 return "__Unsupported types of download.__"
-        else:
-            types = ctx.input
 
         if isinstance(types, str):
             match = DOMAIN.match(types)
@@ -614,7 +603,7 @@ class GoogleDrive(module.Module):
     @command.alias("gdlist", "gdls")
     async def cmd_gdsearch(self,
                            ctx: command.Context) -> Union[str, Tuple[str, int]]:
-        if ctx.input and not ctx.matches:
+        if not ctx.matches:
             return "__Invalid parameters of input.__", 5
 
         await ctx.respond("Collecting...")

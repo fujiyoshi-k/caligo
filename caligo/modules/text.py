@@ -24,11 +24,6 @@ class TextModule(module.Module):
     @command.alias("sarcasm")
     async def cmd_mock(self, ctx: command.Context) -> str:
         text = ctx.input
-        if not text and ctx.msg.reply_to_message:
-            text = ctx.msg.reply_to_message.text
-        elif not text and not ctx.msg.reply_to_message:
-            return "__Give me a text or reply to a message.__"
-
         chars = [text]
         for idx, ch in enumerate(chars):
             ch = ch.upper() if random.choice((True, False)) else ch.lower()
@@ -41,21 +36,12 @@ class TextModule(module.Module):
     @command.alias("strikethrough")
     async def cmd_strike(self, ctx: command.Context) -> str:
         text = ctx.input
-        if not text and ctx.msg.reply_to_message:
-            text = ctx.msg.reply_to_message.text
-        elif not text and not ctx.msg.reply_to_message:
-            return "__Give me a text or reply to a message.__"
-
         return "\u0336".join(text) + "\u0336"
 
     @command.desc("Dissect a string into named Unicode codepoints")
     @command.usage("[text to dissect]", reply=True)
     async def cmd_charinfo(self, ctx: command.Context) -> str:
         text = ctx.input
-        if not text and ctx.msg.reply_to_message:
-            text = ctx.msg.reply_to_message.text
-        elif not text and not ctx.msg.reply_to_message:
-            return "__Give me a text or reply to a message.__"
 
         chars = []
         for char in text:
@@ -85,11 +71,6 @@ class TextModule(module.Module):
     @command.usage("[text to filter, or reply]", reply=True)
     async def cmd_clap(self, ctx: command.Context) -> str:
         text = ctx.input
-        if not text and ctx.msg.reply_to_message:
-            text = ctx.msg.reply_to_message.text
-        elif not text and not ctx.msg.reply_to_message:
-            return "__Give me a text or reply to a message.__"
-
         return "\n".join("👏".join(line.split()) for line in text.split("\n"))
 
     @command.desc("Encode text into Base64")
@@ -97,24 +78,13 @@ class TextModule(module.Module):
     @command.usage("[text to encode, or reply]", reply=True)
     async def cmd_base64encode(self, ctx: command.Context) -> str:
         text = ctx.input
-        if not text and ctx.msg.reply_to_message:
-            text = ctx.msg.reply_to_message.text
-        elif not text and not ctx.msg.reply_to_message:
-            return "__Give me a text or reply to a message.__"
-
         return base64.b64encode(text.encode("utf-8")).decode()
 
     @command.desc("Decode Base64 data")
     @command.alias("b64decode", "b64d")
     @command.usage("[base64 text to decode, or reply]", reply=True)
     async def cmd_base64decode(self, ctx: command.Context) -> str:
-        text = ctx.input
-        if not text and ctx.msg.reply_to_message:
-            text = ctx.msg.reply_to_message.text
-        elif not text and not ctx.msg.reply_to_message:
-            return "__Give me a text or reply to a message.__"
-
         try:
-            return base64.b64decode(text).decode("utf-8", "replace")
+            return base64.b64decode(ctx.input).decode("utf-8", "replace")
         except binascii.Error as e:
             return f"⚠️ Invalid Base64 data: {e}"

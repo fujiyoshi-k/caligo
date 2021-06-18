@@ -88,8 +88,6 @@ class SystemModule(module.Module):
     @command.alias("sh")
     async def cmd_shell(self, ctx: command.Context) -> str:
         snip = ctx.input
-        if not snip:
-            return "Give me command to run."
 
         await ctx.respond("Running snippet...")
         before = util.time.usec()
@@ -134,8 +132,6 @@ class SystemModule(module.Module):
     @command.alias("ev", "exec")
     async def cmd_eval(self, ctx: command.Context) -> str:
         code = ctx.input
-        if not code:
-            return "Give me code to evaluate."
 
         out_buf = io.StringIO()
 
