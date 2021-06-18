@@ -111,6 +111,8 @@ class CommandDispatcher(Base):
                         reply_msg = msg.reply_to_message
                         if reply_msg.text:
                             ctx.input = reply_msg.text
+                        elif reply_msg.media:  # media doesn't have text pass it
+                            pass
                         elif not cmd.usage_optional:
                             await ctx.respond(
                                 f"{err_base}\n__The message you replied to doesn't contain text.__"
